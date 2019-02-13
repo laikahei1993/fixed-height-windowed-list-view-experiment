@@ -241,9 +241,9 @@ export default class FixedHeightWindowedListView extends Component {
 
   __renderRow(data, parentSectionId, idx, key) {
     if (data && _.isObject(data) && data.sectionId) {
-      return this.props.renderSectionHeader && this.props.renderSectionHeader(data, null, idx, key);
+      return this.props.renderSectionHeader ? this.props.renderSectionHeader(data, null, idx, key) : null;
     } else {
-      return this.props.renderCell && this.props.renderCell(data, parentSectionId, idx, key);
+      return this.props.renderCell ? this.props.renderCell(data, parentSectionId, idx, key) : null;
     }
   }
 
