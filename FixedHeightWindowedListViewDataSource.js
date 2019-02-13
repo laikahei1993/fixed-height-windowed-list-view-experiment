@@ -150,7 +150,7 @@ class FixedHeightListViewDataSource {
   getHeightBeforeRow(i) {
     let height = 0;
 
-    console.log(this._lookup);
+    // console.log(this._lookup);
     _.forEach(this._lookup, (section, sectionId) => {
       if (i > section.range[0] && i <= section.range[1]) {
         height += section.sectionHeaderHeight;
@@ -270,7 +270,7 @@ class FixedHeightListViewDataSource {
   getRowHeight(i) {
     let row = this._dataSource[i];
 
-    if (_.isObject(row) && row.sectionId) {
+    if (row && _.isObject(row) && row.sectionId) {
       return this.getSectionHeaderHeight(row.sectionId);
     } else {
       return this.getCellHeight(i);

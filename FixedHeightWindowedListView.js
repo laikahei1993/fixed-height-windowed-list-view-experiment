@@ -4,14 +4,16 @@
 'use strict';
 
 import React, { Component } from 'react'
+import PropTypes from 'prop-types';
 import {
   Platform,
   ScrollView,
   Text,
   View,
+  Dimensions,
 } from 'react-native';
 
-import FixedHeightWindowedListViewDataSource from 'FixedHeightWindowedListViewDataSource';
+import FixedHeightWindowedListViewDataSource from './FixedHeightWindowedListViewDataSource';
 import clamp from './clamp';
 import deepDiffer from './deepDiffer';
 import invariant from './invariant';
@@ -181,7 +183,8 @@ export default class FixedHeightWindowedListView extends Component {
       });
 
       // Scroll to the buffer area as soon as setState is complete
-      this.scrollRef.scrollWithoutAnimationTo(startY);
+      this.scrollRef.scrollTo({ y: startY, animated: false });
+      //  this.scrollRef.scrollTo({x: 0, y: startY, animation: false});
     } else {
       this.nextSectionToScrollTo = sectionId; // Only keep the most recent value
     }
@@ -189,7 +192,8 @@ export default class FixedHeightWindowedListView extends Component {
 
   scrollWithoutAnimationTo(destY, destX) {
     this.scrollRef &&
-      this.scrollRef.scrollWithoutAnimationTo(destY, destX);
+      this.scrollRef.scrollTo({ y: destY, x: destX, animated: false });
+
   }
 
   // Android requires us to wait a frame between setting the buffer, scrolling
@@ -212,13 +216,13 @@ export default class FixedHeightWindowedListView extends Component {
       let parentSectionId = '';
 
       // TODO: generalize this!
-      if (data.get && data.get('guid_token')) {
+      if (data && data.get && data.get('guid_token')) {
         id = data.get('guid_token');
       }
 
       let key = id;
 
-      if (!(_.isObject(data) && data.sectionId)) {
+      if (!(data && _.isObject(data) && data.sectionId)) {
         parentSectionId = this.props.dataSource.getSectionId(idx)
         key = `${key}-${id}`;
       }
@@ -236,7 +240,7 @@ export default class FixedHeightWindowedListView extends Component {
   }
 
   __renderRow(data, parentSectionId, idx, key) {
-    if (_.isObject(data) && data.sectionId) {
+    if (data && _.isObject(data) && data.sectionId) {
       return this.props.renderSectionHeader(data, null, idx, key);
     } else {
       return this.props.renderCell(data, parentSectionId, idx, key);
@@ -249,6 +253,20 @@ export default class FixedHeightWindowedListView extends Component {
     this.scrollDirection = this.__getScrollDirection();
     this.height = e.nativeEvent.layoutMeasurement.height;
     this.__enqueueComputeRowsToRender();
+
+    if (this.props.onEndReached) {
+      const windowHeight = Dimensions.get('window').height;
+      const { height } = e.nativeEvent.contentSize;
+      const offset = e.nativeEvent.contentOffset.y;
+
+      if( windowHeight + offset >= height ){
+        // ScrollEnd
+        this.props.onEndReached(e);
+      }
+    }
+    if (this.props.onScroll) {
+      this.props.onScroll(e);
+    }
   }
 
   __getScrollDirection() {
@@ -370,15 +388,17 @@ export default class FixedHeightWindowedListView extends Component {
 FixedHeightWindowedListView.DataSource = FixedHeightWindowedListViewDataSource;
 
 FixedHeightWindowedListView.propTypes = {
-  dataSource: React.PropTypes.object.isRequired,
-  renderCell: React.PropTypes.func.isRequired,
-  renderSectionHeader: React.PropTypes.func,
-  incrementDelay: React.PropTypes.number,
-  initialNumToRender: React.PropTypes.number,
-  maxNumToRender: React.PropTypes.number,
-  numToRenderAhead: React.PropTypes.number,
-  numToRenderBehind: React.PropTypes.number,
-  pageSize: React.PropTypes.number,
+  dataSource: PropTypes.object.isRequired,
+  renderCell: PropTypes.func.isRequired,
+  renderSectionHeader: PropTypes.func,
+  incrementDelay: PropTypes.number,
+  initialNumToRender: PropTypes.number,
+  maxNumToRender: PropTypes.number,
+  numToRenderAhead: PropTypes.number,
+  numToRenderBehind: PropTypes.number,
+  pageSize: PropTypes.number,
+  onEndReached: PropTypes.func,
+  onScroll: PropTypes.func,
 };
 
 FixedHeightWindowedListView.defaultProps = {
@@ -403,6 +423,6 @@ class CellRenderer extends React.Component {
 }
 
 CellRenderer.propTypes = {
-  shouldUpdate: React.PropTypes.bool,
-  render: React.PropTypes.func,
+  shouldUpdate: PropTypes.bool,
+  render: PropTypes.func,
 };
