@@ -154,7 +154,7 @@ class FixedHeightListViewDataSource {
     _.forEach(this._lookup, (section, sectionId) => {
       if (i > section.range[0] && i <= section.range[1]) {
         height += section.sectionHeaderHeight;
-        // height += ((i - 1) - section.range[0]) * section.cellHeight;
+        height += ((i - 1) - section.range[0]) * section.cellHeight;
       } else if (section.range[0] < i) {
         height += section.height;
       }
@@ -259,14 +259,10 @@ class FixedHeightListViewDataSource {
     if (relativeY <= parentSection.sectionHeaderHeight) {
       return parentSection.range[0];
     } else {
-      let offset = relativeY - parentSection.sectionHeaderHeight;
-      let cumulativeHeight = parentSection.cellHeight.reduce((prev, cur) => {
-        if (prev.length > 0) {
-          return [...prev, prev[length - 1] + cur];
-        }
-        return [cur];
-      }, []);
-      let i = cumulativeHeight.findIndex(height => offset <= height);
+      let i = Math.floor(
+        (relativeY - parentSection.sectionHeaderHeight) /
+        parentSection.cellHeight
+      );
       return parentSection.range[0] + i;
     }
   }
@@ -289,7 +285,7 @@ class FixedHeightListViewDataSource {
     let parentSection = this.getParentSection(i);
 
     if (parentSection) {
-      return parentSection.cellHeight[i - parentSection.range[0]];
+      return parentSection.cellHeight;
     }
   }
 
@@ -333,15 +329,15 @@ class FixedHeightListViewDataSource {
 
     /* Build a data structure like this so we can easily perform calculations we
      * need later:
-     * { 'A': { rows: 2, range: [0, 2], height: 250, startY: 0, endY: 250, cellHeight: [95, 100], sectionHeaderHeight: 35} }
+     * { 'A': { rows: 2, range: [0, 2], height: 250, startY: 0, endY: 250, cellHeight: 95, sectionHeaderHeight: 35} }
      */
     let lastRow = -1;
     let cumulativeHeight = 0;
     this._lookup = sectionIdsPresent.reduce((result, sectionId) => {
       let sectionHeaderHeight = this._getHeightForSectionHeader(sectionId);
-      let cellHeight = dataBlob[sectionId].map((data, index) => this._getHeightForCell(sectionId, index));
+      let cellHeight = this._getHeightForCell(sectionId);
       let count = dataBlob[sectionId].length;
-      let sectionHeight = sectionHeaderHeight + cellHeight.reduce((prev, cur) => prev + cur, 0);
+      let sectionHeight = sectionHeaderHeight + cellHeight * count;
 
       result[sectionId] = {
         count: count + 1,                          // Factor in section header
